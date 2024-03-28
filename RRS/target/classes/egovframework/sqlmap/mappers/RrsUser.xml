@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="RrsUserMapper">
+	<select id="selectUserInfo" parameterType="BMap" resultType="BMap">
+	<include refid="page.pagingPre"/> <!-- 페이징 처리 시작 -->
+		SELECT ROW_NUMBER() OVER(ORDER BY HAN_NAME asc) ROWNUM <!-- 페이징을 위한 컬럼 컬럼 이름 ROWNUM 해야만 됨. -->
+			  ,USER_ID
+			  ,MEM_GBN
+			  ,HAN_NAME
+			  ,ENG_NAME
+			  ,TEL_NO
+			  ,EMAIL
+			  ,PASSWD
+			  ,RET_YN
+			  ,REG_DTM
+			  ,UPD_DTM
+			  ,(
+					SELECT CODE_NM
+					FROM BC_COMM_L
+					WHERE 1=1
+					AND HEAD_CD = '500030'
+					AND CODE = T1.MEM_GBN
+				) AS MEM_NM
+		FROM tb_member as T1
+		WHERE 1 = 1
+		<if test='S_USER_ID != null and S_USER_ID != ""'>
+		   AND USER_ID LIKE CONCAT('%',#{S_USER_ID},'%')
+		</if>
+		<if test='S_USER_NM != null and S_USER_NM != ""'>
+		   AND (HAN_NAME LIKE CONCAT('%',#{S_USER_NM},'%')) OR (ENG_NAME LIKE CONCAT('%',#{S_USER_NM},'%'))
+		</if>
+		<if test='USER_ID != null and USER_ID != ""'>
+		   AND USER_ID = #{USER_ID}
+		</if>
+	<include refid="page.pagingPost"/> <!-- 페이징 처리 끝 -->
+	</select>
+	
+	<select id="selectGetCommonCode" parameterType="Bmap" resultType="Bmap">
+	    SELECT T1.CODE , T1.CODE_NM
+          FROM BC_COMM_L T1
+          JOIN BC_COMM_H T2 ON T2.HEAD_CD = /**/ T1.HEAD_CD
+         WHERE 1 = 1
+           AND T1.HEAD_CD = #{HEAD_CD}
+       <if test="REF_CHR1 != null and REF_CHR1 != ''">
+	  	   AND T1.REF_CHR1 = #{REF_CHR1}
+	   </if>
+	   <if test="CODE != null and CODE != ''">
+	  	   AND T1.CODE > #{CODE}
+	   </if>
+	   <choose>
+	       <when test="ORDER_GBN != null and ORDER_GBN != ''">
+	           ORDER BY T1.REF_CHR5
+	       </when>
+	       <otherwise>
+               ORDER BY T1.CODE
+	       </otherwise>
+	   </choose>
+	</select>
+	
+	<select id="selectUserInfoCnt" parameterType="BMap" resultType="int">
+		SELECT COUNT(1)
+		  FROM TB_MEMBER 
+		 WHERE USER_ID = #{USER_ID}
+	</select>
+	
+	<insert id="insertUserInfo" parameterType="BMap">
+		INSERT INTO TB_MEMBER
+					(USER_ID
+					,MEM_GBN
+					,HAN_NAME
+					,ENG_NAME
+					,TEL_NO
+					,EMAIL
+					,PASSWD
+					,RET_YN
+					,REG_DTM
+					,UPD_DTM
+					)
+			 VALUES (#{USER_ID}
+					,#{MEM_GBN}
+					,#{HAN_NAME}
+					,#{ENG_NAME}
+					,#{TEL_NO}
+					,#{EMAIL}
+					,#{PASSWD}
+					,'N'
+					,NOW()
+					,NOW()
+					)
+	</insert>
+	
+	<update id="updateUserInfo" parameterType="BMap">
+		UPDATE TB_MEMBER
+		   SET HAN_NAME = #{HAN_NAME}
+			  ,ENG_NAME = #{ENG_NAME}
+			  ,TEL_NO = #{TEL_NO}
+			  ,EMAIL = #{EMAIL}
+			  ,PASSWD = #{PASSWD}
+			  ,RET_YN = #{RET_YN}
+			  ,UPD_DTM = NOW()
+		WHERE USER_ID = #{USER_ID}
+	</update>
+	
+	<delete id="deleteUserInfo" parameterType="BMap">
+		DELETE FROM TB_MEMBER
+		 WHERE USER_ID = #{USER_ID}
+	</delete>
+	
+	<select id="selectMemberUserInfo" parameterType="BMap" resultType="BMap">
+	<include refid="page.pagingPre"/> <!-- 페이징 처리 시작 -->
+	/* User.xml -> selectMemberUserInfo */
+		SELECT ROW_NUMBER() OVER(ORDER BY HAN_NAME asc) ROWNUM <!-- 페이징을 위한 컬럼 컬럼 이름 ROWNUM 해야만 됨. -->
+			  ,HAN_NAME
+			  ,ENG_NAME
+			  ,TEL_NO
+			  ,RET_YN
+			  ,REG_DTM
+			  ,UPD_DTM
+		FROM tb_admin_reg_member
+	<include refid="page.pagingPost"/> <!-- 페이징 처리 끝 -->
+	</select>
+	
+	<select id="selectMemberUserCnt" parameterType="BMap" resultType="int">
+		SELECT COUNT(1)
+		  FROM tb_admin_reg_member 
+		 WHERE HAN_NAME = #{HAN_NAME}
+		   AND ENG_NAME = #{ENG_NAME}
+		   AND TEL_NO = #{TEL_NO}
+	</select>
+	
+	<select id="selectMemberUserInfoCnt" parameterType="BMap" resultType="int">
+		SELECT COUNT(1)
+		  FROM tb_admin_reg_member 
+		 WHERE HAN_NAME = #{Ex_HAN_NAME}
+		   AND ENG_NAME = #{Ex_ENG_NAME}
+		   AND TEL_NO = #{Ex_TEL_NO}
+	</select>
+	
+	<select id="selectMemberUserInfoCntAfterMemberUpdate" parameterType="BMap" resultType="int">
+		SELECT COUNT(1)
+		  FROM TB_MEMBER
+		 WHERE MEM_GBN = "01"
+		   AND HAN_NAME = #{Ex_HAN_NAME}
+		   AND ENG_NAME = #{Ex_ENG_NAME}
+		   AND TEL_NO = #{Ex_TEL_NO}
+	</select>
+	
+	<update id="updateUserInfoAfterMemberUpdate" parameterType="BMap">
+		UPDATE TB_MEMBER
+		   SET HAN_NAME = #{HAN_NAME}
+			  ,ENG_NAME = #{ENG_NAME}
+			  ,TEL_NO = #{TEL_NO}
+		 WHERE MEM_GBN = "01"
+		   AND HAN_NAME = #{Ex_HAN_NAME}
+		   AND ENG_NAME = #{Ex_ENG_NAME}
+		   AND TEL_NO = #{Ex_TEL_NO}
+	</update>
+	
+	<insert id="insertMemberUserInfo" parameterType="BMap">
+		INSERT INTO tb_admin_reg_member
+					(HAN_NAME
+					,ENG_NAME
+					,TEL_NO
+					,RET_YN
+					,REG_DTM
+					,UPD_DTM
+					)
+			 VALUES (#{HAN_NAME}
+					,#{ENG_NAME}
+					,#{TEL_NO}
+					,'N'
+					,NOW()
+					,NOW()
+					)
+	</insert>
+	
+	<update id="updateMemberUserInfo" parameterType="BMap">
+		UPDATE tb_admin_reg_member
+		   SET HAN_NAME = #{HAN_NAME}
+			  ,ENG_NAME = #{ENG_NAME}
+			  ,TEL_NO = #{TEL_NO}
+			  ,RET_YN = #{RET_YN}
+			  ,UPD_DTM = NOW()
+		WHERE HAN_NAME = #{Ex_HAN_NAME}
+		  AND ENG_NAME = #{Ex_ENG_NAME}
+		  AND TEL_NO = #{Ex_TEL_NO}
+	</update>
+	
+	<delete id="deleteMemberUserInfo" parameterType="BMap">
+		DELETE FROM tb_admin_reg_member
+		 WHERE HAN_NAME = #{HAN_NAME}
+		   AND ENG_NAME = #{ENG_NAME}
+		   AND TEL_NO = #{TEL_NO}
+	</delete>
+	
+	<update id="updatePassword" parameterType="BMap">
+		UPDATE BC_USER
+		   SET PW_CURR = #{NEW_PASSWORD}
+			  ,PW_PAST1 = PW_CURR
+			  ,PW_PAST2 = PW_PAST1
+			  ,PW_PAST3 = PW_PAST2
+			  <if test='INIT = "Y"'>
+		 	  ,LOGIN_DT = NOW()
+			  </if>
+		 WHERE COMP_CD = #{COMP_CD}
+		   AND USER_ID = #{USER_ID}
+	</update>
+	
+	<select id="selectPastPassword" parameterType="BMap" resultType="int">
+		SELECT COUNT(1)
+		  FROM BC_USER 
+		 WHERE COMP_CD = #{COMP_CD}
+		   AND USER_ID = #{USER_ID}
+		   AND (PW_CURR = #{NEW_PASSWORD}
+		    OR PW_PAST1 = #{NEW_PASSWORD}
+			OR PW_PAST2 = #{NEW_PASSWORD}
+			OR PW_PAST3 = #{NEW_PASSWORD})
+	</select>
+	
+	<select id="updateLockyn" parameterType="BMap" resultType="int">
+		UPDATE BC_USER 
+		   SET LOCK_YN = 'N',
+		       WRONG_CNT = 0
+		 WHERE COMP_CD = #{COMP_CD}
+		   AND USER_ID = #{USER_ID}
+	</select>
+</mapper>
